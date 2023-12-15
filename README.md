@@ -1,1 +1,1 @@
-# lambda-stacks
+# Lambda Stacks

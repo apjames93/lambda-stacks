@@ -1,0 +1,70 @@
+# https://github.com/awslabs/serverless-application-model/blob/develop/versions/2016-10-31.md
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Page Search FAAS
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'*'"
+      AllowHeaders: "'Content-Type, X-Amz-Date, Authorization, X-Api-Key, x-requested-with'"
+      AllowOrigin: "'*'"
+  Function:
+    Timeout: 15
+    MemorySize: 128
+    Layers:
+      - !Ref RuntimeDependenciesLayer
+Resources:
+  RuntimeDependenciesLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+      BuildArchitecture: x86_64
+    Properties:
+      Description: Runtime dependencies for Lambdas
+      ContentUri: .
+      CompatibleRuntimes:
+        - nodejs16.x
+      RetentionPolicy: Retain
+
+  UtilsFunctionLayer:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+      BuildArchitecture: x86_64
+    Properties:
+      Description: Common layer
+      ContentUri: .
+      CompatibleRuntimes:
+        - nodejs16.x
+      RetentionPolicy: Retain
+
+  FaasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: faas.default
+      Runtime: nodejs16.x
+      Layers:
+        - !Ref UtilsFunctionLayer
+      Architectures:
+        - x86_64
+      Events:
+        Base:
+          Type: Api
+          Properties:
+            Path: /faas/
+            Method: any
+        Others:
+          Type: Api
+          Properties:
+            Method: any
+            Path: /faas/{proxy+}
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints: 
+        - src/lambdas/faas/faas.ts
+
