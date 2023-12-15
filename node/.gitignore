@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+junit.xml
+.aws-sam
+.vscode
+
+# ENV VARS
+secrets/*
+!secrets/.keep
+.test.env
+env.json
+.env
