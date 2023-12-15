@@ -1,0 +1,82 @@
+# .github/node/workflows/deploy-stack.yaml
+name: Deploy Node Lambda Stack
+
+on:
+  push:
+    paths:
+      - 'node/**'
+    branches:
+      - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./node
+
+      - name: Run Clean Code
+        run: npm run clean-code
+        working-directory: ./node
+
+      - name: Run Tests
+        run: npm run test
+        working-directory: ./node
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up Python
+        uses: actions/setup-python@v3
+
+      - name: Set Up AWS SAM
+        uses: aws-actions/setup-sam@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./node
+
+      - name: Deploy Lambda Stack
+        working-directory: ./node
+        run: |
+          TEMPLATE_FILE="template.yaml"
+          BRANCH_NAME=${{ github.ref_name }}
+          
+          if [ "${BRANCH_NAME}" != "main" ] && [ "${BRANCH_NAME}" != "stage" ]; then
+            TEMPLATE_FILE="template.qa.yaml"
+          fi
+
+          npm run sam:build -- --template=${TEMPLATE_FILE}
+
+          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
+            --s3-bucket ${{ secrets.AWS_LAMBDA_S3_BUCKET }} \
+            --stack-name node-${BRANCH_NAME}-stack \
+            --debug \
+            --capabilities CAPABILITY_IAM

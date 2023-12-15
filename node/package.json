@@ -1,19 +1,22 @@
 {
     "name": "node-lambdas",
     "engines": {
-        "node": "=16"
+        "node": "=20"
     },
     "scripts": {
         "start": "nodemon --watch 'src/**' --ext 'ts,json' --ignore 'src/**/*.spec.ts' --exec 'ts-node src/index.ts'",
         "format": "prettier --write \"src/**/*.ts\"",
         "lint": "eslint src --fix",
         "clean-code": "npm run format && npm run lint",
-        "build": "rm -rf .dist && npm run build:esbuild",
+        "build": "rm -rf .dist && npm run build:esbuild && cp ./Makefile ./dist/ && cp ./package.json ./dist/",
         "build:esbuild": "node esbuild.config.ts",
         "watch": "tsc -w --preserveWatchOutput",
         "test": "NODE_ENV=test jest --coverage --runInBand",
         "test:watch": "NODE_ENV=test jest --watch --runInBand",
-        "sam:build": "rm -rf .aws-sam && npm run build && sam build",
+        "test:ci": "NODE_ENV=test jest --ci --runInBand --reporters=jest-junit --verbose --coverage --max-old-space-size=4096",
+        "sam:build": "rm -rf .aws-sam && npm run build && npm run sam:build:template",
+        "sam:build:template": "TEMPLATE=${npm_config_template:-template.yaml} npm run build:template",
+        "build:template": "SAM_CLI_TELEMETRY=1 sam build --template $TEMPLATE",
         "sam:start": "npm run sam:build && sam local start-api"
     },
     "devDependencies": {
