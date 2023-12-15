@@ -1,0 +1,87 @@
+# .github/node/workflows/deploy-stack.yaml
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16.15.1'
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./node
+
+      - name: Run Clean Code
+        run: npm run clean-code
+        working-directory: ./node
+
+      - name: Run Tests
+        run: |
+          ./cc-test-reporter before-build
+          npm run test:ci && ./cc-test-reporter after-build --exit-code $?
+        working-directory: ./node
+
+      - name: Store Test Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: junit.xml
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up Python
+        uses: actions/setup-python@v3
+
+      - name: Set Up AWS SAM
+        uses: aws-actions/setup-sam@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16.15.1'
+        working-directory: ./node
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./node
+
+      - name: Build SAM Application
+        run: npm run sam:build
+        working-directory: ./node
+
+      - name: Deploy Lambda Stack
+        run: |
+          TEMPLATE_FILE="template.yaml"
+          if [ "${GITHUB_REF_SLUG}" != "main" ] || [ "${GITHUB_REF_SLUG}" != "stage" ]; then
+            TEMPLATE_FILE="template.qa.yaml"
+          fi
+          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
+            --s3-bucket ${{ secrets.AWS_LAMBDA_S3_BUCKET }} \
+            --stack-name ${GITHUB_REF_SLUG}-stack \
+            --template-file $TEMPLATE_FILE \
+            --debug

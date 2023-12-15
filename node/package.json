@@ -13,6 +13,7 @@
         "watch": "tsc -w --preserveWatchOutput",
         "test": "NODE_ENV=test jest --coverage --runInBand",
         "test:watch": "NODE_ENV=test jest --watch --runInBand",
+        "test:ci": "NODE_ENV=test jest --ci --runInBand --reporters=jest-junit --verbose --coverage --max-old-space-size=4096",
         "sam:build": "rm -rf .aws-sam && npm run build && sam build",
         "sam:start": "npm run sam:build && sam local start-api"
     },

@@ -1,0 +1,20 @@
+# .github/workflows/main.yaml
+name: Main Workflow
+
+on:
+  push:
+    paths:
+      - 'node/**'
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  deploy-node:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Trigger Node Workflow Deploy
+        run: |
+          gh workflow run /node/workflows/deploy-stack.yaml
