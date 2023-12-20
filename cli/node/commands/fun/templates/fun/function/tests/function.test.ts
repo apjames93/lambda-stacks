@@ -1,4 +1,3 @@
-import method from '../example';
 import eventObj from './events/event';
 import { constructAPIGwEvent } from '../../../../test-helpers/constructAPIGwEvent';
 

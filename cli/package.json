@@ -1,0 +1,16 @@
+{
+  "name": "faas-cli",
+  "version": "4.0.4",
+  "description": "Node CLI to generate services and functions",
+  "main": "index.js",
+  "bin": {
+    "faas-cli": "./index.js"
+  },
+  "author": "apjames93",
+  "dependencies": {
+    "commander": "^9.3.0",
+    "fs-extra": "^10.1.0",
+    "node-async-exec": "^1.2.0",
+    "prepend-file": "^2.0.1"
+  }
+}
