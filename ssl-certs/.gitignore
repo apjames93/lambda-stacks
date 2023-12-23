@@ -1,0 +1,4 @@
+.aws-sam
+.test.env
+env.json
+.env
