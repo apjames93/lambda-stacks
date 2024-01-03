@@ -210,6 +210,9 @@ def request_certs(emails, domains):
         '--manual-cleanup-hook', 'python cleanup-hook.py',
         '--preferred-challenges', 'http',
 
+        # Debug for debug
+        '--debug',
+
     ]
 
     # Stage or Prod?
